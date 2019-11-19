@@ -1,0 +1,155 @@
+from sklearn.metrics import confusion_matrix
+
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+import numpy as np
+import pandas as pd
+import csv
+import random
+from sklearn import metrics
+
+classType = [2,4]
+cancer_target = []
+cancer_data = []
+results = []
+
+#Załadowanie pliku CSV oraz czyszczenie(usuwanie linii gdzie jest znak "?"
+def open_csv(file_name):
+    with open(file_name) as csvfile:
+        reader = csv.reader(csvfile, quoting=csv.QUOTE_ALL)
+        for row in reader:
+            if "?" not in row:
+                temp = []
+                for i in range(0, len(row)):
+                    temp.append(int(row[i]))
+                results.append(temp)
+    return results
+
+
+x = open_csv("data.csv")
+
+#dodanie wartości "klas" do listy
+for i in range(len(results)):
+    cancer_target.append(results[i][len(results[i])-1])
+
+#dodanie wartości atrybutów
+for i in range(len(results)):
+    temp_tab = []
+    for j in range(1,10):
+        temp_tab.append(results[i][j])
+    cancer_data.append(temp_tab)
+
+#ranking Cech
+df = pd.DataFrame(cancer_data) #wrzucenie do struktury "pandy"
+df["SELECTOR"] = cancer_target #kolumna selector ma nasze dwie klasy
+X = df.drop("SELECTOR",1) #X -> tabela z danymi
+print("Data:")
+print(X)
+y = df["SELECTOR"]
+print("\n\n Classes:")
+print(y)
+print("\n\n")
+cor = df.corr(method="pearson") #oblicza korelację między kolumnami
+cor_target = cor["SELECTOR"]
+keys = cor_target.sort_values(ascending=False).drop("SELECTOR").keys().tolist() #id posortowane
+print("Sorted keys {}\n\n".format(keys))
+
+
+
+
+keys_tab = []
+
+for i in range(len(results)):
+    temp_tab = []
+    temp_tab.append(results[i][6])
+    temp_tab.append(results[i][3])
+    temp_tab.append(results[i][2])
+    temp_tab.append(results[i][7])
+    temp_tab.append(results[i][8])
+ #   temp_tab.append(results[i][1])
+ #   temp_tab.append(results[i][4])
+ #   temp_tab.append(results[i][5])
+    temp_tab.append(results[i][9])
+    keys_tab.append(temp_tab)
+
+
+
+
+random_table = []
+for i in range(5):
+    value = random.randrange(200, 1200)
+    random_table.append(value)
+
+random_table.sort()
+
+#dataToRemember
+rem_data_test = 0.0
+rem_data_pred = 0.0
+average = 0.0
+for i in range(5):
+    # Split dataset into training set and test set
+    data1_train, data1_test, data2_train, data2_test = train_test_split(keys_tab, cancer_target, test_size=0.3, random_state=random_table[i])  # 70% training and 30% test
+    gnb = GaussianNB()
+    gnb.fit(data1_train, data2_train)
+    data2_pred = gnb.predict(data1_test)
+    # Model Accuracy, how often is the classifier correct?
+    temp_average = metrics.accuracy_score(data2_test, data2_pred)
+    print("Breast cancer - Accuracy 1 in loop nr {}: {}. Average = {}, Temp = {}".format(i, metrics.accuracy_score(
+        data2_test, data2_pred), average, temp_average))
+    if temp_average > average:
+        rem_data_pred = data2_pred
+        rem_data_test = data2_test
+    average = average + temp_average
+
+
+
+    gnb.fit(data1_test, data2_test)
+    data2_pred = gnb.predict(data1_train)
+    # Model Accuracy, how often is the classifier correct?
+    temp_average = metrics.accuracy_score(data2_train, data2_pred)
+    print("Breast cancer - Accuracy 1 in loop nr {}: {}. Average = {}, Temp = {}".format(i+1, metrics.accuracy_score(
+        data2_train, data2_pred), average, temp_average))
+    if temp_average > average:
+        rem_data_pred = data2_pred
+        rem_data_test = data2_test
+    average = average + temp_average
+
+
+
+
+
+
+
+"""
+
+ cm = confusion_matrix(rem_data_test, rem_data_pred)
+    print(cm)
+
+    print("--")"""
+
+print("\nAverage: {}".format(average/10))
+
+
+
+
+"""
+
+print("\nConfusion matrix:")
+#macierz konfuzji
+cm = confusion_matrix(data2_test, data2_pred)
+print(cm)
+
+
+
+
+
+
+out = gnb.predict([[1.0, 1.0, 7.0, 3.0, 2.0, 1.0, 1.0, 1.0, 1.0]])
+print("----------")
+if out == 2:
+    print("Low probability of breast cancer.")
+else:
+    print("High probability of breast cancer!")
+"""
+
+
